@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-image-app
+spec:
+  selector:
+    matchLabels:
+      app: web-image
+  template:
+    metadata:
+      labels:
+        app: web-image
+    spec:
+      containers:
+      - name: web-image
+        image: awankhede/web-image:v3
+        ports:
+        - containerPort: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-image-service
+spec:
+  selector:
+    app: web-image
+  ports:
+  - port: 8080
+    targetPort: 8080
+

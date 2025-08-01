@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Web Image Viewer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@panzoom/panzoom/dist/panzoom.min.js"></script>
+  <style>
+    #modal-image {
+      cursor: grab;
+      user-select: none;
+      display: block;
+      margin: auto;
+      max-width: 90vw;
+      max-height: 90vh;
+      width: auto;
+      height: auto;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+  <div class="container mx-auto px-4 py-6">
+    <h1 class="text-3xl font-bold mb-4">Image Viewer for "{{ .keyword }}"</h1>
+
+    <!-- Search bar -->
+    <div class="mb-6">
+      <form method="GET" action="/web-image" class="flex flex-col sm:flex-row gap-2 sm:gap-4 items-start sm:items-center">
+        <input 
+          type="text" 
+          name="search" 
+          placeholder="Search images..." 
+          class="w-full sm:w-1/2 p-2 rounded border border-gray-300" 
+          value="{{ .keyword }}" 
+        />
+        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+          Search
+        </button>
+      </form>
+    </div>
+
+    <!-- Image Grid -->
+    <div id="image-container" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      {{ range .images }}
+        <img src="{{ . }}" class="w-full h-40 object-cover rounded shadow cursor-pointer image-preview" alt="Image" />
+      {{ end }}
+    </div>
+
+    <!-- Loader -->
+    <div id="loader" class="text-center mt-6 hidden">
+      <span class="text-lg font-semibold">Loading more images...</span>
+    </div>
+
+    <!-- Load More Button -->
+    <div class="text-center mt-4">
+      <button id="load-more-btn" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+        Load More
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="image-modal" class="fixed inset-0 bg-black bg-opacity-80 hidden z-50 flex items-center justify-center">
+    <span id="modal-close" class="absolute top-5 right-8 text-white text-3xl cursor-pointer z-50">&times;</span>
+    <div id="modal-wrapper" class="overflow-auto max-h-screen max-w-screen p-4">
+      <img id="modal-image" class="block" style="max-width: none; max-height: none;" />
+    </div>
+  </div>
+<script>
+  const modal = document.getElementById("image-modal");
+  const modalImg = document.getElementById("modal-image");
+  const closeBtn = document.getElementById("modal-close");
+  const wrapper = document.getElementById("modal-wrapper");
+  let panzoomInstance = null;
+
+  document.querySelectorAll(".image-preview").forEach(img => {
+    img.addEventListener("click", () => {
+      modalImg.src = img.src;
+      modal.classList.remove("hidden");
+
+      modalImg.onload = () => {
+        if (panzoomInstance) panzoomInstance.destroy();
+        panzoomInstance = Panzoom(modalImg, {
+          maxScale: 5,
+          minScale: 1,
+          contain: 'outside'
+        });
+        wrapper.addEventListener('wheel', panzoomInstance.zoomWithWheel);
+      };
+    });
+  });
+
+  closeBtn.addEventListener("click", () => {
+    modal.classList.add("hidden");
+    if (panzoomInstance) {
+      panzoomInstance.destroy();
+      panzoomInstance = null;
+    }
+  });
+
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      modal.classList.add("hidden");
+      if (panzoomInstance) {
+        panzoomInstance.destroy();
+        panzoomInstance = null;
+      }
+    }
+  });
+
+  // Load More: redirect with updated page query
+  const loadMoreBtn = document.getElementById("load-more-btn");
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener("click", () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const keyword = urlParams.get("search") || "nature";
+      const page = parseInt(urlParams.get("page") || "1");
+      const nextPage = page + 1;
+      window.location.href = `/web-image?search=${encodeURIComponent(keyword)}&page=${nextPage}`;
+    });
+  }
+</script>
+
+  
+</body>
+</html>
