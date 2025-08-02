@@ -32,7 +32,21 @@
           placeholder="Search images..." 
           class="w-full sm:w-1/2 p-2 rounded border border-gray-300" 
           value="{{ .keyword }}" 
+          id="search-input"
         />
+        
+        <label class="flex items-center gap-2">
+          <input 
+            id="nsfw-toggle"   
+            type="checkbox" 
+            name="NSFW" 
+            value="on" 
+            {{ if eq .nsfw "on" }}checked{{ end }} 
+            class="form-checkbox"
+          />
+          NSFW
+        </label>
+
         <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
           Search
         </button>
@@ -63,9 +77,10 @@
   <div id="image-modal" class="fixed inset-0 bg-black bg-opacity-80 hidden z-50 flex items-center justify-center">
     <span id="modal-close" class="absolute top-5 right-8 text-white text-3xl cursor-pointer z-50">&times;</span>
     <div id="modal-wrapper" class="overflow-auto max-h-screen max-w-screen p-4">
-      <img id="modal-image" class="block" style="max-width: none; max-height: none;" />
+      <img id="modal-image" class="block max-w-full max-h-screen object-contain" />
     </div>
   </div>
+
 <script>
   const modal = document.getElementById("image-modal");
   const modalImg = document.getElementById("modal-image");
@@ -108,19 +123,33 @@
     }
   });
 
-  // Load More: redirect with updated page query
+  // Load More button click
   const loadMoreBtn = document.getElementById("load-more-btn");
   if (loadMoreBtn) {
     loadMoreBtn.addEventListener("click", () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const keyword = urlParams.get("search") || "nature";
+      const keyword = urlParams.get("search") || "";
       const page = parseInt(urlParams.get("page") || "1");
       const nextPage = page + 1;
-      window.location.href = `/web-image?search=${encodeURIComponent(keyword)}&page=${nextPage}`;
+
+      const nsfwChecked = document.getElementById('nsfw-toggle').checked;
+      const nsfw = nsfwChecked ? "on" : "off";
+
+      window.location.href = `/web-image?search=${encodeURIComponent(keyword)}&page=${nextPage}&NSFW=${nsfw}`;
     });
   }
+
+  /// Checkbox change: trigger fetch with current page
+  document.getElementById('nsfw-toggle').addEventListener('change', function () {
+    const search = document.getElementById("search-input").value || "";
+    const nsfw = this.checked ? "on" : "off";
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const page = urlParams.get("page") || "1";
+
+    window.location.href = `/web-image?search=${encodeURIComponent(search)}&page=${page}&NSFW=${nsfw}`;
+  });
 </script>
 
-  
 </body>
 </html>
